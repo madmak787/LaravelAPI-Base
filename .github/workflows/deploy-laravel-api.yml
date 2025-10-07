@@ -1,0 +1,71 @@
+name: Deploy Laravel API
+
+on:
+  push:
+    branches: [Development, Staging, UAT, Production]
+  pull_request:
+    branches: [Production]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+
+      - name: Install Composer Dependencies
+        run: composer install --optimize-autoloader --no-dev --no-progress --no-interaction --prefer-dist
+
+      - name: Set target path
+        id: vars
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            development|Development) echo "DIR=/domains/dealighted.co/public_html/instances/dev/api/" >> $GITHUB_OUTPUT ;;
+            stage|staging|Stage|Staging) echo "DIR=/domains/dealighted.co/public_html/instances/staging/api/" >> $GITHUB_OUTPUT ;;
+            uat|UAT) echo "DIR=/domains/dealighted.co/public_html/instances/uat/api/" >> $GITHUB_OUTPUT ;;
+            production|Production) echo "DIR=/domains/dealighted.co/public_html/api/" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          server-dir: ${{ steps.vars.outputs.DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules**
+            **/vendor/**
+
+      - name: Execute remote SSH commands using password
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd .${{ steps.vars.outputs.DIR }}
+            composer install --optimize-autoloader --no-dev --no-progress --no-interaction --prefer-dist
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan storage:link || true
+            # Optional: clear caches if needed
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
