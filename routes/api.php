@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PublicSettingController;
 use App\Http\Controllers\DataController;
+
+Route::get('/settings', [PublicSettingController::class, 'show']);
 
 Route::prefix('user')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -18,8 +22,12 @@ Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login']);
 
     Route::middleware(['auth:sanctum', 'abilities:admin:*'])->group(function () {
-        Route::get('/me', [AdminAuthController::class, 'me']);
+        Route::get('/profile', [AdminAuthController::class, 'show']);
+        Route::post('/profile', [AdminAuthController::class, 'update']);
+        Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
         Route::post('/logout', [AdminAuthController::class, 'logout']);
+        Route::get('/settings', [SettingController::class, 'index']);
+        Route::post('/settings', [SettingController::class, 'upsert']);
         // add more admin-only endpoints here...
         Route::apiResource('data', DataController::class);
     });

@@ -76,9 +76,8 @@ return [
     */
 
     'middleware' => [
-        'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
+        'authenticate_session' => null, // disable session auth for API tokens
         'encrypt_cookies' => Illuminate\Cookie\Middleware\EncryptCookies::class,
-        'validate_csrf_token' => Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        'validate_csrf_token' => null,  // CSRF not needed for Bearer tokens
     ],
-
 ];

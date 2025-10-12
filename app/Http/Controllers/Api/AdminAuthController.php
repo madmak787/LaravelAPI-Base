@@ -26,27 +26,67 @@ class AdminAuthController extends Controller
         }
 
         if (! $admin->is_active) {
-            return response()->json(['message' => 'Account is deactivated.'], 403);
+            return failure('Account is deactivated.');
         }
 
-        $token = $admin->createToken('admin-api', ['admin:*'])->plainTextToken;
+        $token = $admin->createToken('admin-auth', ['admin:*'])->plainTextToken;
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Login successful',
-            'data' => ['admin' => $admin, 'token' => $token],
-        ]);
-    }
-
-    public function me(Request $request)
-    {
-        return response()->json(['status' => true, 'data' => $request->user()]);
+        return success('Login successful', ['admin' => $admin, 'token' => $token]);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['status' => true, 'message' => 'Logged out']);
+        return success('Logged out');
+    }
+
+    public function show(Request $request)
+    {
+        $admin = $request->user(); // sometimes null
+        if (! $admin) {
+            $admin = auth('sanctum')->user(); // fallback
+        }
+
+        return success('Admin Profile', $admin);
+    }
+
+    public function update(Request $request)
+    {
+        $admin = $request->user();
+
+        if (! $admin) {
+            return error('Unauthenticated', 401);
+        }
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|min:3',
+                'phone' => 'nullable|string|max:20',
+            ]);
+        } catch (ValidationException $e) {
+            return failure($e->errors());
+        }
+
+        $admin->update($validated);
+
+        return success('Profile updated successfully', $admin->fresh());
+    }
+
+    public function changePassword(Request $request)
+    {
+        $admin = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'new_password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ]);
+
+        if (! Hash::check($validated['current_password'], $admin->password)) {
+            return failure('Current password is incorrect');
+        }
+
+        $admin->update(['password' => Hash::make($validated['new_password'])]);
+
+        return success('Password updated successfully');
     }
 }
