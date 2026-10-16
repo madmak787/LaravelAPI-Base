@@ -1,61 +1,45 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LaravelAPI-Base
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A starter kit for API-only Laravel 12 backends by [Mohd Amir Khan](https://khanamir.me). It gives you separate user and admin authentication with Laravel Sanctum, role-scoped token abilities, a settings store and a sample CRUD resource, so a new project starts with the boring parts done.
 
-## About Laravel
+It pairs with [NextJS-Base](https://github.com/madmak787/NextJS-Base) for the front end.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## What's included
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Two guards, one API:** `POST /api/user/login` and `POST /api/admin/login` issue Sanctum tokens with `user:*` or `admin:*` abilities, and route groups check them with the `abilities` middleware
+- **Admin profile:** view and update the profile, change the password, log out
+- **Settings:** admins read and upsert key/value settings; `GET /api/settings` exposes the public ones to the front end
+- **Sample resource:** `apiResource('data')` shows the controller, model and migration pattern to copy
+- Laravel 12 conventions: configuration in `bootstrap/app.php`, no `Kernel.php`
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Routes
 
-## Learning Laravel
+| Method | Path | Access |
+| --- | --- | --- |
+| GET | `/api/settings` | Public |
+| POST | `/api/user/login` | Public |
+| GET | `/api/user/me` | User token |
+| POST | `/api/user/logout` | User token |
+| POST | `/api/admin/login` | Public |
+| GET, POST | `/api/admin/profile` | Admin token |
+| POST | `/api/admin/change-password` | Admin token |
+| GET, POST | `/api/admin/settings` | Admin token |
+| CRUD | `/api/admin/data` | Admin token |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Getting started
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Requires PHP 8.2+ and Composer.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
 
-## Laravel Sponsors
+The API is then available at `http://localhost:8000/api`.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Deploy
 
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`.github/workflows/deploy-laravel-api.yml` deploys the `Development`, `Staging`, `UAT` and `Production` branches over FTP and runs the post-deploy Artisan commands over SSH. Set the server paths and secrets for your own project before using it.
